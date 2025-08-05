@@ -1,0 +1,79 @@
+-- Implementação simples de Cursor SQL
+
+-- Construção de uma tabela temporária para executar o exemplo
+
+---- DROP TABLE #TESTE_250805
+--CREATE TABLE #TESTE_250805 (
+--	ID INT IDENTITY(1,1),	-- Minha Primary Key, com auto incremento de 1, começando com o ID = 1
+--	COLUNA1 VARCHAR(3),		-- Registro previamente populado
+--	COLUNA2 VARCHAR(3),		-- Registro previamente populado
+--	COLUNA3 VARCHAR(6)		-- Alvo da alteração com um update
+--)
+
+---- Inserção de dados
+--INSERT INTO #TESTE_250805(COLUNA1, COLUNA2) VALUES ('A1', 'A2')
+--INSERT INTO #TESTE_250805(COLUNA1, COLUNA2) VALUES ('B1', 'B2')
+--INSERT INTO #TESTE_250805(COLUNA1, COLUNA2) VALUES ('C1', 'C2')
+
+-- SELECT * FROM #TESTE_250805
+
+-- Para voltar ao estado inicial da tabela:
+--UPDATE #TESTE_250805 SET COLUNA3 = NULL
+
+-- Inicia o TCL (Transaction Control Language)
+BEGIN TRANSACTION
+
+	declare -- declaração de variáveis
+		@id UNIQUEIDENTIFIER, -- identifica a coluna de Primary Key
+		@col1 varchar(3),
+		@col2 varchar(3)
+
+	declare myCursor CURSOR FOR -- declaração do nome do cursor
+
+		-- consulta de valores na sequencia de declaração das vairáveis
+		SELECT COLUNA1, COLUNA2
+		FROM #TESTE_250805		
+
+	-- Abre o cursor
+	OPEN myCursor 
+	
+	-- Atribuição inicial para o cursor
+	FETCH NEXT 
+	FROM myCursor
+	INTO @col1, @col2
+
+	WHILE @@FETCH_STATUS = 0 -- Variável lógico para o loop, enquanto existir registros retornando 0 efetua as ações, ao chegar no fim da linha retorna 1 e sai do loop
+	
+	-- Bloco de execução
+	BEGIN
+
+		-- executa a ação
+		UPDATE #TESTE_250805 
+			SET COLUNA3 = CONCAT(COLUNA1, COLUNA2) -- Concatenando as colunas 1 e 2 na 3, exemplo na linha 1: 'A1A2'
+			-- SET COLUNA3 = CONCAT(LEFT(COLUNA1, 1), CAST(RIGHT(COLUNA1, 1) AS INT) + 2) -- Incrementando a lógica para a coluna 3, exemplo na linha: 'A3'
+		WHERE CONCAT(COLUNA1, COLUNA2) = CONCAT(COLUNA1, COLUNA2)
+
+		-- Lê a próxima linha
+		FETCH NEXT 
+		FROM myCursor
+		INTO @col1, @col2
+
+	END
+
+	-- Termina a leitura
+	CLOSE myCursor
+
+	-- Finaliza o cursor
+	DEALLOCATE myCursor
+
+
+	-- Visualizar as alterações na tabela
+	BEGIN 
+		SELECT * FROM #TESTE_250805
+	END 
+
+-- Efetua todas ações sem alterar nenhum registro
+ROLLBACK
+
+-- aplica as alterações, substituindo o comando ROLLBACK
+--COMMIT 
